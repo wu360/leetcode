@@ -38,11 +38,10 @@
 // 
 //
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 class Solution210 {
-    public static int[] findOrder(int numCourses, int[][] prerequisites) {
+    public static int[] findOrder2(int numCourses, int[][] prerequisites) {
         ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
         for (int i = 0; i < numCourses; i++) {
             graph.add(new ArrayList<Integer>());
@@ -53,31 +52,157 @@ class Solution210 {
             graph.get(course).add(pcourse);
         }
         int[] visited = new int[numCourses];
-        List<Integer> ans = new ArrayList<Integer>();
+//        List<Integer> ret = new ArrayList<Integer>();
+        int[] ret = new int[numCourses];
         for (int i = 0; i < numCourses; i++)
-            if (DFS(i, graph, visited, ans))
+            if (DFS2(i, graph, visited, ret))
                 return new int[0];
-        return ans.stream().mapToInt(i -> i).toArray();
+        return ret;
     }
 
 
-    public static boolean DFS(int curr, ArrayList<ArrayList<Integer>> graph, int[] visited, List<Integer> ans) {
+    public static boolean DFS2(int curr, ArrayList<ArrayList<Integer>> graph, int[] visited, int[] ret) {
+        //回路，有环
         if (visited[curr] == 1) return true;
-        if (visited[curr] == 2) return false;
-
+        //从该点出发没有回路
+        if (visited[curr] == -1) return false;
+        //首次访问
         visited[curr] = 1;
         for (int id : graph.get(curr)) {
-            if (DFS(id, graph, visited, ans)) return true;
+            if (DFS2(id, graph, visited, ret)) {
+                return true; //无回路
+            }
         }
-        ans.add(curr);
-        visited[curr] = 2;
+        ret[curr] = curr;
+        visited[curr] = -1;//从该点出发没有回路
         return false;
+    }
+
+
+
+    public static int[] findOrder(int numCourses, int[][] prerequisites) {
+        if (numCourses <= 0) {
+            // 连课程数目都没有，就根本没有办法完成练习了，根据题意应该返回空数组
+            return new int[0];
+        }
+        int plen = prerequisites.length;
+        if (plen == 0) {
+            // 没有有向边，则表示不存在课程依赖，任务一定可以完成
+            int[] ret = new int[numCourses];
+            for (int i = 0; i < numCourses; i++) {
+                ret[i] = i;
+            }
+            return ret;
+        }
+        int[] marked = new int[numCourses];
+        // 初始化有向图 begin
+        HashSet<Integer>[] graph = new HashSet[numCourses];
+        for (int i = 0; i < numCourses; i++) {
+            graph[i] = new HashSet<>();
+        }
+        // 初始化有向图 end
+        // 有向图的 key 是前驱结点，value 是后继结点的集合
+        for (int[] p : prerequisites) {
+            graph[p[1]].add(p[0]);
+        }
+        // 使用 Stack 或者 List 记录递归的顺序，这里使用 Stack
+        Stack<Integer> stack = new Stack<>();
+        for (int i = 0; i < numCourses; i++) {
+            if (dfs(i, graph, marked, stack)) {
+                // 注意方法的语义，如果图中存在环，表示课程任务不能完成，应该返回空数组
+                return new int[0];
+            }
+        }
+        // 在遍历的过程中，一直 dfs 都没有遇到已经重复访问的结点，就表示有向图中没有环
+        // 所有课程任务可以完成，应该返回 true
+        // 下面这个断言一定成立，这是拓扑排序告诉我们的结论
+//        assert stack.size() == numCourses;
+        int[] ret = new int[numCourses];
+        // 想想要怎么得到结论，我们的 dfs 是一致将后继结点进行 dfs 的
+        // 所以压在栈底的元素，一定是那个没有后继课程的结点
+        // 那个没有前驱的课程，一定在栈顶，所以课程学习的顺序就应该是从栈顶到栈底
+        // 依次出栈就好了
+        for (int i = 0; i < numCourses; i++) {
+            ret[i] = stack.pop();
+        }
+        return ret;
+    }
+
+    /**
+     * 注意这个 dfs 方法的语义
+     *
+     * @param i      当前访问的课程结点
+     * @param graph
+     * @param marked 如果 == 1 表示正在访问中，如果 == 2 表示已经访问完了
+     * @return true 表示图中存在环，false 表示访问过了，不用再访问了
+     */
+    private static boolean dfs(int i,
+                        HashSet<Integer>[] graph,
+                        int[] marked,
+                        Stack<Integer> stack) {
+        // 如果访问过了，就不用再访问了
+        if (marked[i] == 1) {
+            // 从正在访问中，到正在访问中，表示遇到了环
+            return true;
+        }
+        if (marked[i] == 2) {
+            // 表示在访问的过程中没有遇到环，这个节点访问过了
+            return false;
+        }
+        // 走到这里，是因为初始化呢，此时 marked[i] == 0
+        // 表示正在访问中
+        marked[i] = 1;
+        // 后继结点的集合
+        HashSet<Integer> successorNodes = graph[i];
+        for (Integer successor : successorNodes) {
+            if (dfs(successor, graph, marked, stack)) {
+                // 层层递归返回 true ，表示图中存在环
+                return true;
+            }
+        }
+        return  false;
+    }
+
+    public static int[] findOrder3(int numCourses, int[][] prerequisites) {
+        int[] inDegree = new int[numCourses];
+        int[][] graph = new int[numCourses][numCourses];
+        for(int i = 0; i < prerequisites.length; i++){
+            graph[prerequisites[i][1]][prerequisites[i][0]] = 1;
+            inDegree[prerequisites[i][0]]++;
+        }
+        Queue<Integer> queue = new LinkedList<>();
+        for(int i = 0; i < numCourses; i++){
+            if(inDegree[i] == 0){
+                queue.add(i);
+            }
+        }
+        int[] result = new int[numCourses];
+        int index = 0;
+        int num = 0;
+        while(!queue.isEmpty()){
+            int u = queue.poll();
+            result[index++] = u;
+            for(int v = 0; v < numCourses; v++){
+                if(graph[u][v] != 0){
+                    inDegree[v]--;
+                    if(inDegree[v] == 0){
+                        queue.add(v);
+                    }
+                }
+            }
+            num++;
+        }
+        if(num != numCourses){
+            result = new int[0];
+        }
+        return result;
     }
 
     public static void main(String[] args) {
         int numCourses = 4;
-        int[][] prerequisites = {{1, 0}, {2, 0}, {3, 1}, {3, 2}};
-        int[] result = findOrder(numCourses, prerequisites);
+        int[][] prerequisites = {{1, 0},{2, 0},{3, 1},   {3, 2}};
+//        int[][] prerequisites = {{0, 1}};
+        int[] result = findOrder3(numCourses, prerequisites);
         for (int v : result) {
             System.out.println(v);
         }
