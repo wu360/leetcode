@@ -38,10 +38,12 @@
 // 
 //
 
+import org.junit.jupiter.api.Test;
+
 import java.util.*;
 
 class Solution210 {
-    public static int[] findOrder2(int numCourses, int[][] prerequisites) {
+    public  int[] findOrder2(int numCourses, int[][] prerequisites) {
         ArrayList<ArrayList<Integer>> graph = new ArrayList<>();
         for (int i = 0; i < numCourses; i++) {
             graph.add(new ArrayList<Integer>());
@@ -61,7 +63,7 @@ class Solution210 {
     }
 
 
-    public static boolean DFS2(int curr, ArrayList<ArrayList<Integer>> graph, int[] visited, int[] ret) {
+    public  boolean DFS2(int curr, ArrayList<ArrayList<Integer>> graph, int[] visited, int[] ret) {
         //回路，有环
         if (visited[curr] == 1) return true;
         //从该点出发没有回路
@@ -198,11 +200,12 @@ class Solution210 {
         return result;
     }
 
-    public static void main(String[] args) {
+    @Test
+    public  void test() {
         int numCourses = 4;
         int[][] prerequisites = {{1, 0},{2, 0},{3, 1},   {3, 2}};
 //        int[][] prerequisites = {{0, 1}};
-        int[] result = findOrder3(numCourses, prerequisites);
+        int[] result = findOrder2(numCourses, prerequisites);
         for (int v : result) {
             System.out.println(v);
         }
