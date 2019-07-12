@@ -39,7 +39,7 @@ public  class  TreeNode {
             } else {
                 nodes[i] = null;
             }
-            System.out.println(arr[i - 1]);
+//            System.out.println(arr[i - 1]);
         }
 
         TreeNode node = null;
